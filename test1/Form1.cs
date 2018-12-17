@@ -16,8 +16,8 @@ namespace test1
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
-        private string ConsumerKey = "s7zFMoPYhnJAcnWW6Cnei2V4D";
-        private string ConsumerSecret = "7F73bvXlGv2sD7OZ3DDHvoVJoYIjTcbolevFQbbjj26NAyCEh6";
+        private string ConsumerKey = "";
+        private string ConsumerSecret = "";
 
         OAuth.OAuthSession OASession;
 
@@ -36,10 +36,10 @@ namespace test1
             OASession = OAuth.Authorize(ConsumerKey, ConsumerSecret);
 
         }
-
+        //test
         private void InitializeVariable()
         {
-            ConsumerKey = SettingManager.common.
+            //ConsumerKey = SettingManager.common.
         }
 
         private void button1_ClickAsync(object sender, EventArgs e)
