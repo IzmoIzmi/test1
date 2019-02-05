@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CoreTweet;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,17 +9,25 @@ namespace test1
 {
     class UserAccountSet
     {
-        List<UserAccount> list = new List< UserAccount>();
+        List<UserAccount> list = new List<UserAccount>();
 
-        public UserAccount this[string id] => GetUserAccount(id);
-
-        public UserAccount GetUserAccount(string ID)
+        public UserAccount GetUserAccount(string ScreenName, string consumerKey, string consumerSecret)
         {
-            if (list.Any(a=>string.Compare(a.ID,ID,true)==0))
-                return list.Single(s => string.Compare(s.ID, ID, true) == 0);
-            return null;
+            var account = list.SingleOrDefault(s => string.Compare(s.ScreenName, ScreenName, true) == 0);
+            if (account != null) account.SetToken(consumerKey, consumerSecret);
+
+            return account;
+        }
+        public UserAccount GetUserAccount(string ID, OAuth.OAuthSession oAuth)
+        {
+            return GetUserAccount(ID, oAuth.ConsumerKey, oAuth.ConsumerSecret);
         }
 
+        public void Add(UserAccount account)
+        {
+            list.RemoveAll(a => string.Compare(a.ScreenName, account.ScreenName, true) == 0);
+            list.Add(account);
+        }
 
         /// <summary>
         /// Serialize Load All
@@ -35,7 +44,9 @@ namespace test1
 
             foreach (var path in System.IO.Directory.GetFiles(dirPath))
             {
-                list.Add(UnSerializeUserAccount(serializer, path));
+                var tmp = UnSerializeUserAccount(serializer, path);
+                tmp.DecryptInit();
+                list.Add(tmp);
             }
         }
 
@@ -55,29 +66,13 @@ namespace test1
         /// <summary>
         /// Serialize Save All
         /// </summary>
-        public void SerializeAccounts()
+        public void SaveAll()
         {
             foreach (var ac in this.list)
             {
-                SerializeAccount(ac);
+                ac.Save();
             }
         }
         
-        /// <summary>
-        /// Serialize Save
-        /// </summary>
-        private void SerializeAccount(UserAccount account)
-        {
-            var dirPath = Properties.Settings.Default.AccountDirPath;
-
-            string fileName = account.ID;
-
-            System.Xml.Serialization.XmlSerializer serializer =
-                new System.Xml.Serialization.XmlSerializer(typeof(UserAccount));
-            System.IO.StreamWriter sw = new System.IO.StreamWriter(
-                fileName, false, new System.Text.UTF8Encoding(false));
-            serializer.Serialize(sw, account);
-            sw.Close();
-        }
     }
 }
