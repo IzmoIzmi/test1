@@ -30,9 +30,18 @@ namespace test1
             logger.Info("Form_Loading");
 
             UserAccountSet = new UserAccountSet();
-            UserAccountSet.UnSerializeAccounts();
+            UserAccountSet.UnSerializeAllAccountData();
 
             CreateOAuthSession();
+
+            var user = UserAccountSet.GetAccount("IzmiIzmo", OASession);
+            if (user == null) return;
+
+            var ures = user.Tokens.Users.Show(id => user.Tokens.UserId);
+            pictureBox1.ImageLocation = ures.ProfileImageUrl;
+            pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
+
+
         }
 
         private void CreateOAuthSession()
@@ -45,6 +54,10 @@ namespace test1
             OASession = OAuth.Authorize(ConsumerKey, ConsumerSecret);
         }
 
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            UserAccountSet.SerializeAllAccountData();
+        }
 
         private void button1_ClickAsync(object sender, EventArgs e)
         {
@@ -59,27 +72,43 @@ namespace test1
             //get pin
             try
             {
-                var tokens = CoreTweet.OAuth.GetTokens(OASession, txtPIN.Text);
-                var account = new UserAccount(tokens);
-                UserAccountSet.Add(account);
+                UserAccountSet.AddAccount(OASession, txtPIN.Text);
             }
-            catch (Exception ex)
+            catch (CoreTweet.TwitterException ex)
             {
-                Console.WriteLine( ex.Message);
+                logger.Error(ex.Message);
+                MessageBox.Show("Pinコードが不正です。もう一度試してください。");
             }
         }
 
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            UserAccountSet.SaveAll();
-        }
 
         private void button2_Click(object sender, EventArgs e)
         {
-            var user = UserAccountSet.GetUserAccount("IzmiIzmo", OASession);
+            var user = UserAccountSet.GetAccount("IzmiIzmo", OASession);
             if (user == null) return;
 
-            user.Tokens.Statuses.Update(status => "login!");
+            user.Tokens.Statuses.Update(status => "login2!");
+        }
+
+        private void btnShowTweet_Click(object sender, EventArgs e)
+        {
+            var user = UserAccountSet.GetAccount("IzmiIzmo", OASession);
+            if (user == null) return;
+
+            StatusResponse tw = null;
+            try
+            {
+                tw = user.Tokens.Statuses.Show(id => txtStatusId.Text);
+                txtStatusId.Text = "";
+            }
+            catch (CoreTweet.TwitterException ex)
+            {
+                MessageBox.Show(ex.Message); 
+            }
+            if (tw == null) return;
+
+            TwiPicFrame f = new TwiPicFrame(tw, user.Tokens);
+            f.Show(this);
         }
     }
 }

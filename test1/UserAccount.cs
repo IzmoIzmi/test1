@@ -12,20 +12,12 @@ namespace test1
         public Tokens Tokens => _Tokens;
 
         private Tokens _Tokens=null;
-        const string EncryptPass = @"https://github.com/IzmoIzmi";
-
-        private UserAccount() { }
        
-        /// <summary>
-        /// After Decrypt
-        /// </summary>
-        public void DecryptInit()
+        public UserAccount(UserAccountData data)
         {
-            //復号化
-            if (!string.IsNullOrEmpty(this.HashAccessToken))
-                this._AccessToken = Encrypt.DecryptString(this.HashAccessToken, EncryptPass);
-            if (!string.IsNullOrEmpty(this.HashAccessTokenSecret))
-                this._AccessTokenSecret = Encrypt.DecryptString(this.HashAccessTokenSecret, EncryptPass);
+            this._AccessToken = data.AccessToken;
+            this._AccessTokenSecret = data.AccessTokenSecret;
+            this.ScreenName = data.ScreenName;
         }
 
         public UserAccount(Tokens tokens)
@@ -40,20 +32,21 @@ namespace test1
         private void SetToken(Tokens token)
         {
             this._Tokens = token;
-            this.ScreenName = _Tokens.ScreenName;
+
+            //tokens.UserId と tokens.ScreenName は Tokens.Create を使った場合、自動で取得されることはないとのこと
+            var ures = Tokens.Account.VerifyCredentials();
+            this._Tokens.ScreenName = ures.ScreenName;
+            this._Tokens.UserId = (long)ures.Id;            
+
             this._AccessToken = _Tokens.AccessToken;
             this._AccessTokenSecret = _Tokens.AccessTokenSecret;
-
-            //暗号化
-            this.HashAccessToken = Encrypt.EncryptString(this._AccessToken, EncryptPass);
-            this.HashAccessTokenSecret = Encrypt.EncryptString(this._AccessTokenSecret, EncryptPass);
-
+            this.ScreenName = _Tokens.ScreenName;
         }
 
         /// <summary>
         /// @*****
         /// </summary>
-        public string ScreenName { get; set; }
+        public string ScreenName { get; private set; }
 
 
         [System.Xml.Serialization.XmlIgnore]
@@ -63,39 +56,48 @@ namespace test1
         private string _AccessToken = "";
         private string _AccessTokenSecret = "";
 
+        public override string ToString() => ScreenName;
+
+        public UserAccountData GetXmlData()=> new UserAccountData(_Tokens);
+    }
+
+    public struct UserAccountData
+    {
+        public string ScreenName;
         public string HashAccessToken;
         public string HashAccessTokenSecret;
 
-        public override string ToString() => ScreenName;
+        [System.Xml.Serialization.XmlIgnore]
+        const string EncryptPass = @"https://github.com/IzmoIzmi";
 
-        public void Save()
+        [System.Xml.Serialization.XmlIgnore]
+        public string AccessToken
         {
-            UserAccountSerializer.SerializeAccount(this);
+            get
+            {
+                if (string.IsNullOrEmpty(this.HashAccessToken)) return null;
+                return Encrypt.DecryptString(this.HashAccessToken, UserAccountData.EncryptPass);
+            }
+        }
+        [System.Xml.Serialization.XmlIgnore]
+        public string AccessTokenSecret
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(this.HashAccessTokenSecret)) return null;
+                return Encrypt.DecryptString(this.HashAccessTokenSecret, UserAccountData.EncryptPass);
+            }
+        }
+
+        public UserAccountData(Tokens token)
+        {
+            this.ScreenName = token.ScreenName;
+            this.HashAccessToken = Encrypt.EncryptString(token.AccessToken, UserAccountData.EncryptPass);
+            this.HashAccessTokenSecret = Encrypt.EncryptString(token.AccessTokenSecret, UserAccountData.EncryptPass);
         }
 
     }
 
-    class UserAccountSerializer
-    {
-        /// <summary>
-        /// Serialize Save
-        /// </summary>
-        static public void SerializeAccount(UserAccount account)
-        {
-            var dirPath = Properties.Settings.Default.AccountDirPath;
-
-            string fileName = System.IO.Path.Combine(dirPath, account.ScreenName);
-
-            System.IO.Directory.CreateDirectory(dirPath);
-
-            System.Xml.Serialization.XmlSerializer serializer =
-                new System.Xml.Serialization.XmlSerializer(typeof(UserAccount));
-            System.IO.StreamWriter sw = new System.IO.StreamWriter(
-                fileName, false, new System.Text.UTF8Encoding(false));
-            serializer.Serialize(sw, account);
-            sw.Close();
-        }
-
-    }
+    
 
 }

@@ -86,6 +86,12 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TwiPicFrame.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TwiPicFrame.Designer.cs">
+      <DependentUpon>TwiPicFrame.cs</DependentUpon>
+    </Compile>
     <Compile Include="UserAccount.cs" />
     <Compile Include="UserAccountSet.cs" />
     <EmbeddedResource Include="Form1.resx">
@@ -101,6 +107,9 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="TwiPicFrame.resx">
+      <DependentUpon>TwiPicFrame.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
